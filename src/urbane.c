@@ -4,10 +4,48 @@
  * Source: https://github.com/eindiran/urbane
  */
 
+// Includes
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+
+
+// Defines
+#define TAPE_CELLS 4096
+
+
+
+/**
+ *
+ */
+void raise_error(char *print_str) {
+    printf("ERROR: %s\n", print_str);
+}
+
+
+/**
+ *
+ */
+void raise_error_instr(char *print_str, char instruction) {
+    raise_error(print_str);
+    printf("Instruction where error occurred: %c\n", instruction);
+}
+
+
+/**
+ *
+ */
+char* alloc_tape(int tape_len) {
+    char *memory_tape = calloc(sizeof(char), tape_len);
+    if (memory_tape != NULL) {
+        return memory_tape;
+    } else {
+        raise_error("Failed to allocate sufficient memory for memory_tape\n");
+    }
+    return NULL;
+}
+
 
 
 /**
@@ -67,17 +105,8 @@ void input_char(int *ptr) {
 /**
  *
  */
-void raise_error(char *print_str, char instruction) {
-    printf("ERROR: %s\n", print_str);
-    printf("Instruction where error occurred: %c\n", instruction);
-}
-
-
-/**
- *
- */
-int interpret_bf(char *instructions) {
-    int instruction_ptr = 0;
+int interpret_bf(char *instructions, char *cell_ptr,
+                 long instruction_ptr) {
     int current_instruction = instructions[instruction_ptr];
     while (current_instruction) {
         // Allows whitespace in instructions:
@@ -88,22 +117,22 @@ int interpret_bf(char *instructions) {
         }
         switch (current_instruction) {
             case '>':
-                increment_pointer(instruction_ptr);
+                increment_pointer(cell_ptr);
                 break;
             case '<':
-                decrement_pointer(instruction_ptr);
+                decrement_pointer(cell_ptr);
                 break;
             case '+':
-                increment_pointer_val(instruction_ptr);
+                increment_pointer_val(cell_ptr);
                 break;
             case '-':
-                decrement_pointer_val(instruction_ptr);
+                decrement_pointer_val(cell_ptr);
                 break;
             case '.':
-                output_char(instruction_ptr);
+                output_char(cell_ptr);
                 break;
             case ',':
-                input_char(instruction_ptr);
+                input_char(cell_ptr);
                 break;
             case '[':
                 // Add instructions to stack
@@ -113,7 +142,7 @@ int interpret_bf(char *instructions) {
                 break;
             default:
                 // Not whitespace or a valid Brainfuck symbol
-                raise_error("Non-Brainfuck character encountered in program instructions", current_instruction);
+                raise_error_instr("Non-Brainfuck character encountered in program instructions", current_instruction);
                 return 1;
         }
     }
@@ -127,39 +156,42 @@ int interpret_bf(char *instructions) {
 int main(int argc, char *argv[]) {
 
     long buff_size;
-    char *instruction_buffer;
+    long instruction_ptr = 0L;
+    long cell_ptr = 0L;
+    
+    // Find out how much we need to allocated for instruction_buffer
+    fseek(fp, 0L, SEEK_END);
+    buff_size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET); // Rewind file pointer
+
+    char *instruction_buffer = alloc_tape(buff_size);
+    char *memory_buffer = alloc_tape(TAPE_CELLS);
+    if (!instruction_buffer || !memory_buffer) {
+        goto cleanup_and_exit;
+    }
 
     FILE *fp = fopen(argv[1], "r");
     // If we get a bad file pointer,
     // error out now
     if (!fp) {
         perror(argv[1]);
-        exit(1);
+        goto cleanup_and_exit;
     }
 
-    // Find out how much we need to allocated for instruction_buffer
-    fseek(fp, 0L, SEEK_END);
-    buff_size = ftell(fp);
-    fseek(fp, 0L, SEEK_SET); // Rewind file pointer
-
-    // Allocate memory for instruction_buffer
-    // Use calloc to ensure null-termination
-    instruction_buffer = calloc(sizeof(char), buff_size);
-    if (!instruction_buffer) {
-        // Allocation failed
-        fclose(fp);
-        printf("Allocation failure\n");
-        exit(1);
-    }
     // Read file into instruction_buffer
     if (fread(instruction_buffer, buff_size, 1, fp) != 1) {
         fclose(fp);
         printf("Failure while reading in file\n");
-        free(instruction_buffer);
-        exit(1);
+        goto cleanup_and_exit;
     }
     fclose(fp);
     int retval = interpret_bf(instruction_buffer);
     free(instruction_buffer);
+    free(memory_buffer);
     return retval;
+
+    cleanup_and_exit:
+        free(instruction_buffer);
+        free(memory_buffer);
+        exit(1);
 }

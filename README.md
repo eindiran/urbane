@@ -11,7 +11,6 @@ Brainfuck is based on the formal programming language [P"](https://en.wikipedia.
 ### Commands
 
 The following commands are valid commands usable in a Brainfuck program:
-
 * `>`: Increment the pointer; move it one cell to the right.
 * `<`: Decrement the pointer; move it one cell to the left.
 * `+`: Increment the value in the memory cell under the pointer.
