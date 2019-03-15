@@ -84,3 +84,13 @@ long get_instr_buff_size(FILE *input_file_fp, char *filename) {
         return buff_size;
     }
 }
+
+
+/**
+ * Does clean up of allocated arrays, then exits.
+ */
+void cleanup(char *instruction_buffer, char *memory_buffer) {
+    free(instruction_buffer);
+    free(memory_buffer);
+    exit(1);
+}

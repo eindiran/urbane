@@ -8,7 +8,6 @@
 /** Includes */
 #include "urbane_utils.h"
 
-
 /**
  * Increment a pointer.
  * Equivalent to the Brainfuck symbol '>'
@@ -64,7 +63,8 @@ void input_char(char *ptr) {
 
 
 /**
- *
+ * This is the bulk of the interpreter logic.
+ * Take in a memory_buffer and an instruction_buffer.
  */
 int interpret_bf(char *instructions, char *cell_ptr) {
     int instruction_ptr = 0;
@@ -108,6 +108,7 @@ int interpret_bf(char *instructions, char *cell_ptr) {
         }
         current_instruction++;
     }
+    return 0;
 }
 
 
@@ -117,7 +118,13 @@ int interpret_bf(char *instructions, char *cell_ptr) {
  */
 int main(int argc, char *argv[]) {
 
+    if (argc < 2) {
+        raise_error("Did not receive a Brainfuck file to interpret.");
+        fprintf(stderr, "Usage: ./urbane foo.bf\n");
+    }
+
     char *filename = argv[1];
+    fprintf(stderr, "Proceeding with .bf file: %s\n", filename);
     FILE *fp = fopen(filename, "r");
 
     long buff_size = get_instr_buff_size(fp, filename);
@@ -128,21 +135,20 @@ int main(int argc, char *argv[]) {
     char *instruction_buffer = alloc_tape(buff_size);
     char *memory_buffer = alloc_tape(TAPE_CELLS);
     if (!instruction_buffer || !memory_buffer) {
-        goto cleanup_and_exit;
+        cleanup(instruction_buffer, memory_buffer); // Exit program here
     }
 
-    // If we get a bad file pointer,
-    // error out now
+    // If we get a bad file pointer, error out now
     if (!fp) {
         perror(argv[1]);
-        goto cleanup_and_exit;
+        cleanup(instruction_buffer, memory_buffer); // Exit program here
     }
 
     // Read file into instruction_buffer
     if (fread(instruction_buffer, buff_size, 1, fp) != 1) {
         fclose(fp);
-        printf("Failure while reading in file\n");
-        goto cleanup_and_exit;
+        raise_error("Failure while reading in file.");
+        cleanup(instruction_buffer, memory_buffer); // Exit program here
     }
     fclose(fp);
     int retval = interpret_bf(instruction_buffer, memory_buffer);
@@ -150,8 +156,4 @@ int main(int argc, char *argv[]) {
     free(memory_buffer);
     return retval;
 
-    cleanup_and_exit:
-        free(instruction_buffer);
-        free(memory_buffer);
-        exit(1);
 }

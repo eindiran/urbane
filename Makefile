@@ -24,15 +24,18 @@ compile_debug:	$(CSOURCES)
 	$(CC) -O3 -Wall -o bin/urbane bin/urbane.o bin/urbane_utils.o
 
 
+.PHONY: mkbin
+mkbin:
+	mkdir -p bin/
+
+
 .PHONY: clean
 clean:
 	rm -rf bin/*
-	rm ./*.gc??
-	rm ./*.o
 
 
 .PHONY: build
-build:	clean compile
+build:	clean mkbin compile
 
 
 .PHONY: all
