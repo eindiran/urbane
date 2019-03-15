@@ -1,58 +1,19 @@
 /**
  * urbane.c
- * Brainfuck interpreter written in C.
+ * Brainfuck interpreter written in C: this file contains the main
+ * interpreter code.
  * Source: https://github.com/eindiran/urbane
  */
 
-// Includes
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
-
-// Defines
-#define TAPE_CELLS 4096
-
-
-
-/**
- *
- */
-void raise_error(char *print_str) {
-    printf("ERROR: %s\n", print_str);
-}
-
-
-/**
- *
- */
-void raise_error_instr(char *print_str, char instruction) {
-    raise_error(print_str);
-    printf("Instruction where error occurred: %c\n", instruction);
-}
-
-
-/**
- *
- */
-char* alloc_tape(int tape_len) {
-    char *memory_tape = calloc(sizeof(char), tape_len);
-    if (memory_tape != NULL) {
-        return memory_tape;
-    } else {
-        raise_error("Failed to allocate sufficient memory for memory_tape\n");
-    }
-    return NULL;
-}
-
+/** Includes */
+#include "urbane_utils.h"
 
 
 /**
  * Increment a pointer.
  * Equivalent to the Brainfuck symbol '>'
  */
-void increment_pointer(int *ptr) {
+void increment_pointer(char *ptr) {
     ptr++;
 }
 
@@ -61,7 +22,7 @@ void increment_pointer(int *ptr) {
  * Decrement a pointer.
  * Equivalent to the Brainfuck symbol '<'
  */
-void decrement_pointer(int *ptr) {
+void decrement_pointer(char *ptr) {
     ptr--;
 }
 
@@ -70,7 +31,7 @@ void decrement_pointer(int *ptr) {
  * Increment pointer value.
  * Equivalent to the Brainfuck symbol '+'
  */
-void increment_pointer_val(int *ptr) {
+void increment_pointer_val(char *ptr) {
     ++*ptr;
 }
 
@@ -79,7 +40,7 @@ void increment_pointer_val(int *ptr) {
  * Decrement pointer value.
  * Equivalent to the Brainfuck symbol '-'
  */
-void decrement_pointer_val(int *ptr) {
+void decrement_pointer_val(char *ptr) {
     --*ptr;
 }
 
@@ -88,7 +49,7 @@ void decrement_pointer_val(int *ptr) {
  * Output a character at ptr to STDOUT.
  * Equivalent to the Brainfuck symbol '.'
  */
-void output_char(int *ptr) {
+void output_char(char *ptr) {
     putchar(*ptr);
 }
 
@@ -97,7 +58,7 @@ void output_char(int *ptr) {
  * Set pointer value to a character grabbed from STDIN.
  * Equivalent to the Brainfuck symbol ','
  */
-void input_char(int *ptr) {
+void input_char(char *ptr) {
     *ptr = getchar();
 }
 
@@ -105,8 +66,8 @@ void input_char(int *ptr) {
 /**
  *
  */
-int interpret_bf(char *instructions, char *cell_ptr,
-                 long instruction_ptr) {
+int interpret_bf(char *instructions, char *cell_ptr) {
+    int instruction_ptr = 0;
     int current_instruction = instructions[instruction_ptr];
     while (current_instruction) {
         // Allows whitespace in instructions:
@@ -145,6 +106,7 @@ int interpret_bf(char *instructions, char *cell_ptr,
                 raise_error_instr("Non-Brainfuck character encountered in program instructions", current_instruction);
                 return 1;
         }
+        current_instruction++;
     }
 }
 
@@ -155,22 +117,20 @@ int interpret_bf(char *instructions, char *cell_ptr,
  */
 int main(int argc, char *argv[]) {
 
-    long buff_size;
-    long instruction_ptr = 0L;
-    long cell_ptr = 0L;
-    
-    // Find out how much we need to allocated for instruction_buffer
-    fseek(fp, 0L, SEEK_END);
-    buff_size = ftell(fp);
-    fseek(fp, 0L, SEEK_SET); // Rewind file pointer
+    char *filename = argv[1];
+    FILE *fp = fopen(filename, "r");
 
+    long buff_size = get_instr_buff_size(fp, filename);
+    if (buff_size == -1L) {
+        exit(1);
+    }
+    
     char *instruction_buffer = alloc_tape(buff_size);
     char *memory_buffer = alloc_tape(TAPE_CELLS);
     if (!instruction_buffer || !memory_buffer) {
         goto cleanup_and_exit;
     }
 
-    FILE *fp = fopen(argv[1], "r");
     // If we get a bad file pointer,
     // error out now
     if (!fp) {
@@ -185,7 +145,7 @@ int main(int argc, char *argv[]) {
         goto cleanup_and_exit;
     }
     fclose(fp);
-    int retval = interpret_bf(instruction_buffer);
+    int retval = interpret_bf(instruction_buffer, memory_buffer);
     free(instruction_buffer);
     free(memory_buffer);
     return retval;
