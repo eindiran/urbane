@@ -27,6 +27,22 @@ void raise_error_instr(char *print_str, char instruction) {
 
 
 /**
+ * Prints out the values in a tape. Useful for debugging.
+ */
+void printf_tape(char *tape, int tape_len, bool ints) {
+    fprintf(stderr, "Tape: [");
+    for (int i = 0; i < tape_len; i++) {
+        if (ints) {
+            fprintf(stderr, "'%i', ", (int) tape[i]);
+        } else {
+            fprintf(stderr, "'%c', ", tape[i]);
+        }
+    }
+    fprintf(stderr, "]\n");
+}
+
+
+/**
  * Allocate a "memory tape" structure of size tape_len.
  * Suitable for allocation of the memory_buffer or the
  * instruction_buffer.

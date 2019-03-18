@@ -3,8 +3,12 @@
 # Source: https://github.com/eindiran/urbane
 
 CC = gcc
-CCFLAGS = -Wall -O3 -c
-DEBUGFLAGS = -Wall -g3 -c
+CCFLAGS = -Wall -fPIC -Ofast -std=gnu11 -c
+# All warnings, position-independent code, use max optmizations, use GNU11 standard, don't link
+DEBUGFLAGS = -Wall -v -fPIC -Og -g3 -std=gnu11 -c
+# All warnings, verbose compiler output, position-independent code, debug-level optimizations, maximum debug info, use GNU11 standard, don't link.
+EMBEDFLAGS = -Wall -Os -c
+# All warnings, optimize for binary size, don't link.
 INCLUDES = src/urbane_utils.h
 CSOURCES = \
 		   src/urbane.c \
