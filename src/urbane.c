@@ -122,25 +122,6 @@ int interpret_bf(char *instructions, int instruction_len, char *cptr, bool stric
 
 
 /**
- * Test out printing the tape.
- * May be used as main if name is switched.
- */
-int test_printf_tape(int argc, char *argv[]) {
-    int ch_len = 20;
-    char *memory_tape = alloc_tape(ch_len);
-    char *cptr = memory_tape;
-    for (int i = 0; i < ch_len; i++) {
-        if (i % 3 == 0) {
-            increment_pointer_val(cptr);
-        }
-        cptr++;
-    }
-    printf_tape(memory_tape, ch_len, true);
-    return 0;
-}
-
-
-/**
  * Main function:
  * Handles reading in the file + commandline options,
  * allocating/freeing memory, and calling the interpreter code in
