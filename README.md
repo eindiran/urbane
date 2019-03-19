@@ -17,8 +17,8 @@ The following commands are valid commands usable in a Brainfuck program:
 * `-`: Decrement the value in the memory cell under the pointer.
 * `.`: Output the character signified by the value in the memory cell under the pointer. Usually this is interpreted as an ASCII value.
 * `,`: Input a character (e.g. from STDIN) and stores it in the cell under the pointer.
-* `[`: Jump past the matching `]` is the cell under the pointer is 0.
-* `]`: Jump back to the matching `[` is the cell under pointer is non-zero.
+* `[`: Jump past the matching `]` if the cell under the pointer is 0.
+* `]`: Jump back to the matching `[` if the cell under pointer is non-zero.
 
 ### Example Programs
 There are a number of example programs available in the `bf` directory.
