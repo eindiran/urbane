@@ -8,64 +8,18 @@
 /** Includes */
 #include <unistd.h>
 #include "urbane_utils.h"
-
-/**
- * Increment a pointer.
- * Equivalent to the Brainfuck symbol '>'
- */
-void increment_pointer(char *ptr) {
-    fprintf(stderr, "Incrementing pointer: %x\n", ptr); // DEBUG
-    ptr = ptr + 1;
-}
+#include "brainfuck_ops.h"
 
 
 /**
- * Decrement a pointer.
- * Equivalent to the Brainfuck symbol '<'
+ * Print out the usage of the program and exit.
  */
-void decrement_pointer(char *ptr) {
-    fprintf(stderr, "Decrementing pointer: %x\n", ptr); // DEBUG
-    ptr = ptr - 1;
-}
-
-
-/**
- * Increment pointer value.
- * Equivalent to the Brainfuck symbol '+'
- */
-void increment_pointer_val(char *ptr) {
-    // fprintf(stderr, "Incrementing pointer value from: %c to: %c\n", *ptr, *ptr + 1); // DEBUG
-    *ptr = *ptr + 1;
-}
-
-
-/**
- * Decrement pointer value.
- * Equivalent to the Brainfuck symbol '-'
- */
-void decrement_pointer_val(char *ptr) {
-    // fprintf(stderr, "Decrementing pointer value from: %c to: %c\n", *ptr, *ptr - 1); // DEBUG
-    *ptr = *ptr - 1;
-}
-
-
-/**
- * Output a character at ptr to STDOUT.
- * Equivalent to the Brainfuck symbol '.'
- */
-void output_char(char *ptr) {
-    // fprintf(stderr, "Outputing char:\n"); // DEBUG
-    putchar(*ptr);
-}
-
-
-/**
- * Set pointer value to a character grabbed from STDIN.
- * Equivalent to the Brainfuck symbol ','
- */
-void input_char(char *ptr) {
-    // fprintf(stderr, "Inputting char:\n"); // DEBUG
-    *ptr = getchar();
+void print_usage() {
+    fprintf(stderr, "Usage: urbane foo.bf        --> Interpret foo.bf using non-strict interpreter.\n");
+    fprintf(stderr, "       urbane -s foo.bf     --> Interpret foo.bf using strict interpreter.\n");
+    fprintf(stderr, "       urbane -t <N> foo.bf --> Interpret foo.bf, using <N> memory cells.\n");
+    fprintf(stderr, "       urbane -h            --> Print this message and exit.\n");
+    exit(0);
 }
 
 
@@ -74,80 +28,95 @@ void input_char(char *ptr) {
  * Take in a memory_buffer and an instruction_buffer.
  */
 int interpret_bf(char *instructions, int instruction_len, char *cptr, bool strict) {
+    #ifdef DEBUG
+        char *cell_ptr = cptr;
+    #endif
     int instruction_ptr = 0;
     char current_instruction = instructions[instruction_ptr];
+    
     while (instruction_ptr <= instruction_len) {
-        // fprintf(stderr, "Current instruction: %c\n", current_instruction); // DEBUG
-        // fprintf(stderr, "instruction_ptr: %i\n", instruction_ptr); // DEBUG
+        
         // Allows whitespace in instructions:
         // Just skip over it
         if (isspace(current_instruction)) {
             current_instruction = instructions[++instruction_ptr];
             continue;
         }
+        
+        #ifdef DEBUG
+            fprintf(stderr, "Current instruction: %c\n", current_instruction); // DEBUG
+            fprintf(stderr, "instruction_ptr: %i\n", instruction_ptr); // DEBUG
+        #endif
+       
         switch (current_instruction) {
             case '>':
-                cptr++;
+                increment_pointer(&cptr);
                 break;
             case '<':
-                cptr--;
+                decrement_pointer(&cptr);
                 break;
             case '+':
-                *cptr = *cptr + 1;
+                increment_pointer_val(cptr);
                 break;
             case '-':
-                *cptr = *cptr - 1;
+                decrement_pointer_val(cptr);
                 break;
             case '.':
-                output_char(cptr);
+                output_char_stdout(cptr);
                 break;
             case ',':
                 input_char(cptr);
                 break;
             case '[':
                 // if *cptr isn't 0 continue to next instruction
-                // fprintf(stderr, "cptr: %i\n", *cptr); // DEBUG
+                #ifdef DEBUG
+                    fprintf(stderr, "cptr: %i\n", *cptr); // DEBUG
+                #endif
                 if (*cptr == 0) {
                     while ((current_instruction = instructions[++instruction_ptr]) != ']') {
                         if (instruction_ptr >= instruction_len) {
                             // Got all the way to the end
                             raise_error("Unmatched '[' found!");
-                            exit(1);
+                            return 1;
                         }
-                        break;
                     }
-                    continue;
                 }
                 break;
             case ']':
                 // if *cptr is 0 continue to next instruction
-                // fprintf(stderr, "cptr: %i\n", *cptr); // DEBUG
+                #ifdef DEBUG
+                    fprintf(stderr, "cptr: %i\n", *cptr); // DEBUG
+                #endif
                 if (*cptr != 0) {
                     while ((current_instruction = instructions[--instruction_ptr]) != '[') {
                         if (instruction_ptr <= 0) {
                             // Got all the way to the beginning
                             raise_error("Unmatched ']' found!");
-                            exit(1);
+                            return 1;
                         }
-                        break;
                     }
-                    continue;
                 }
                 break;
             default:
                 // Not whitespace or a valid Brainfuck symbol
+                // When in strict mode, fail here
                 if (strict) {
                     raise_error_instr("Non-Brainfuck character encountered in program instructions", current_instruction);
                     return 1;
-                } else {
+                } else { // When not in strict mode, treat as whitespace instead
                     current_instruction = instructions[++instruction_ptr];
                     continue;
                 }
-                break; // This is unreachable, but the linter complains if its not here.
         }
         current_instruction = instructions[++instruction_ptr];
-        // fprintf(stderr, "New instruction: %c\n", current_instruction); // DEBUG
+        #ifdef DEBUG
+           fprintf(stderr, "New instruction: %c\n", current_instruction); // DEBUG
+        #endif
     }
+    #ifdef DEBUG
+        fprintf(stderr, "Final instruction pointer value: %d\n", instruction_ptr); //DEBUG
+        fprintf(stderr, "Final cell pointer value: %d\n", (int)(cptr - cell_ptr)); //DEBUG
+    #endif
     return 0;
 }
 
@@ -158,7 +127,6 @@ int interpret_bf(char *instructions, int instruction_len, char *cptr, bool stric
  */
 int test_printf_tape(int argc, char *argv[]) {
     int ch_len = 20;
-    // char *instruction_tape = alloc_tape(ch_len);
     char *memory_tape = alloc_tape(ch_len);
     char *cptr = memory_tape;
     for (int i = 0; i < ch_len; i++) {
@@ -173,29 +141,22 @@ int test_printf_tape(int argc, char *argv[]) {
 
 
 /**
- * Print out the usage of the program and exit.
- */
-void print_usage() {
-    fprintf(stderr, "Usage: urbane foo.bf    --> Interpret foo.bf using non-strict interpreter.\n");
-    fprintf(stderr, "       urbane -s foo.bf --> Interpret foo.bf using strict interpreter.\n");
-    fprintf(stderr, "       urbane -h        --> Print this message and exit.\n");
-    exit(0);
-}
-
-
-/**
  * Main function:
- * Handles reading in the file, allocating memory, and calling interpret_bf()
+ * Handles reading in the file + commandline options,
+ * allocating/freeing memory, and calling the interpreter code in
+ * interpret_bf()
  */
 int main(int argc, char *argv[]) {
 
     bool strict_interpreter = false;
     int opt;
     extern int optind;
+    extern char *optarg;
     char *filename;
+    int tape_cells = 0;
 
     // Handle options
-    while ((opt = getopt(argc, argv, "sh")) != -1) {
+    while ((opt = getopt(argc, argv, "sht:")) != -1) {
         switch (opt) {
             case 's':
                 strict_interpreter = true;
@@ -203,12 +164,22 @@ int main(int argc, char *argv[]) {
             case 'h':
                 print_usage();
                 break;
+            case 't':
+                tape_cells = atoi(optarg);
+                break;
             default:
                 fprintf(stderr, "Got unknown argument or option: %c\n", (char) opt);
                 print_usage();
                 break;
         }
     }
+
+    if (tape_cells == 0) {
+        tape_cells = TAPE_CELLS; // Use the preconfigured size (2 ^ 14)
+    }
+    #ifdef DEBUG
+        fprintf(stderr, "Cells in memory tape: %d\n", tape_cells);
+    #endif
     
     // Handle non-option arguments (filename)
     if (optind > argc) {
@@ -216,7 +187,9 @@ int main(int argc, char *argv[]) {
         print_usage();
     }
     filename = argv[optind];
-    fprintf(stderr, "Proceeding with .bf file: %s\n", filename);
+    #ifdef DEBUG
+        fprintf(stderr, "Proceeding with .bf file: %s\n", filename);
+    #endif
     
     FILE *fp = fopen(filename, "r");
 
@@ -226,7 +199,7 @@ int main(int argc, char *argv[]) {
     }
     
     char *instruction_buffer = alloc_tape(buff_size);
-    char *memory_buffer = alloc_tape(TAPE_CELLS);
+    char *memory_buffer = alloc_tape(tape_cells);
     if (!instruction_buffer || !memory_buffer) {
         cleanup(instruction_buffer, memory_buffer); // Exit program
     }
@@ -244,9 +217,13 @@ int main(int argc, char *argv[]) {
         cleanup(instruction_buffer, memory_buffer); // Exit program
     }
     fclose(fp);
-    printf_tape(instruction_buffer, (int) buff_size, false);
+    #ifdef DEBUG
+        printf_tape(instruction_buffer, (int) buff_size, false);
+    #endif
     int retval = interpret_bf(instruction_buffer, (int) buff_size, memory_buffer, strict_interpreter);
-    printf_tape(memory_buffer, 200, true);
+    #ifdef DEBUG
+        printf_tape(memory_buffer, 200, true);
+    #endif
     free(instruction_buffer);
     free(memory_buffer);
     return retval;
