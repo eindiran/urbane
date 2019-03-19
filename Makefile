@@ -19,42 +19,46 @@ CSOURCES = \
 
 .PHONY: compile
 compile:	$(CSOURCES)
-	$(CC) $(CCFLAGS) -include $(INCLUDES) src/urbane_utils.c -o bin/urbane_utils.o
-	$(CC) $(CCFLAGS) src/brainfuck_ops.c -o bin/brainfuck_ops.o
-	$(CC) $(CCFLAGS) -include $(INCLUDES) src/urbane.c -o bin/urbane.o
-	$(CC) -O3 -Wall -o bin/urbane bin/urbane.o bin/urbane_utils.o bin/brainfuck_ops.o
+	rm -f bin/urbane
+	$(CC) $(CCFLAGS) -include $(INCLUDES) src/urbane_utils.c -o build/urbane_utils.o
+	$(CC) $(CCFLAGS) src/brainfuck_ops.c -o build/brainfuck_ops.o
+	$(CC) $(CCFLAGS) -include $(INCLUDES) src/urbane.c -o build/urbane.o
+	$(CC) -O3 -Wall -o bin/urbane build/urbane.o build/urbane_utils.o build/brainfuck_ops.o
 	@printf "\nSHA256 Checksum of executable: "
 	@sha256sum bin/urbane
 
 
 .PHONY: compile_debug
 compile_debug:	$(CSOURCES)
-	$(CC) $(DEBUGFLAGS) -include $(INCLUDES) src/urbane_utils.c -o bin/urbane_utils.o
-	$(CC) $(DEBUGFLAGS) src/brainfuck_ops.c -o bin/brainfuck_ops.o
-	$(CC) $(DEBUGFLAGS) -include $(INCLUDES) src/urbane.c -o bin/urbane.o
-	$(CC) -Og -g3 -Wall -o bin/urbane-debug bin/urbane.o bin/urbane_utils.o bin/brainfuck_ops.o
+	rm -f bin/urbane-debug
+	$(CC) $(DEBUGFLAGS) -include $(INCLUDES) src/urbane_utils.c -o build/urbane_utils.o
+	$(CC) $(DEBUGFLAGS) src/brainfuck_ops.c -o build/brainfuck_ops.o
+	$(CC) $(DEBUGFLAGS) -include $(INCLUDES) src/urbane.c -o build/urbane.o
+	$(CC) -Og -g3 -Wall -o bin/urbane-debug build/urbane.o build/urbane_utils.o build/brainfuck_ops.o
 	@printf "\nSHA256 Checksum of executable: "
 	@sha256sum bin/urbane-debug
 
 
 .PHONY: compile_embed
 compile_embed:	$(CSOURCES)
-	$(CC) $(EMBEDFLAGS) -include $(INCLUDES) src/urbane_utils.c -o bin/urbane_utils.o
-	$(CC) $(EMBEDFLAGS) src/brainfuck_ops.c -o bin/brainfuck_ops.o
-	$(CC) $(EMBEDFLAGS) -include $(INCLUDES) src/urbane.c -o bin/urbane.o
-	$(CC) -Os -Wall -o bin/urbane-embed bin/urbane.o bin/urbane_utils.o bin/brainfuck_ops.o
+	rm -f bin/urbane-embed
+	$(CC) $(EMBEDFLAGS) -include $(INCLUDES) src/urbane_utils.c -o build/urbane_utils.o
+	$(CC) $(EMBEDFLAGS) src/brainfuck_ops.c -o build/brainfuck_ops.o
+	$(CC) $(EMBEDFLAGS) -include $(INCLUDES) src/urbane.c -o build/urbane.o
+	$(CC) -Os -Wall -o bin/urbane-embed build/urbane.o build/urbane_utils.o build/brainfuck_ops.o
 	@printf "\nSHA256 Checksum of executable: "
 	@sha256sum bin/urbane-embed
 
 
 .PHONY: mkbin
 mkbin:
+	mkdir -p build/
 	mkdir -p bin/
 
 
 .PHONY: clean
 clean:
-	rm -rf bin/*
+	rm -rf build/*
 
 
 .PHONY: build
