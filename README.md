@@ -1,6 +1,8 @@
 # urbane
 Urbane is a simple [Brainfuck](https://esolangs.org/wiki/Brainfuck) interpreter written in C. It is named for Brainfuck's author, [Urban Müller](https://esolangs.org/wiki/Urban_M%C3%BCller).
 
+Currently the code is broken on many programs as the semantics of nested looping are incorrect. This is covered in issue [#3](https://github.com/eindiran/urbane/issues/3), which is in progress.
+
 ### Compiling and running the interpreter
 To use `urbane`, compile the interpreter using `make`:
 
